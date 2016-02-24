@@ -79,6 +79,7 @@ type JuliaSVMModel{T}
   weight_labels::Vector{Int32}
   weights::Vector{Float64}
   nfeatures::Int
+  ninstances::Int
   verbose::Bool
 end
 
@@ -225,6 +226,7 @@ function svm_train{U<:Real}(idx::Array{Float64,1},
                 weight_labels,
                 weights,
                 size(instances,1),
+                size(instances,2),
                 verbose)
 
 end
@@ -262,7 +264,7 @@ function svm_predict{U<:Real}(model::JuliaSVMModel,
 
 end
 
-function get_dual_variables(model)
+function get_dual_variables_raw(model)
   
   In = Int[]
   v = zeros(0)
@@ -275,6 +277,13 @@ function get_dual_variables(model)
 
 end
 
+function get_dual_variables(model)
+  
+  (In,v) = get_dual_variables_raw(model)
+  return sparsevec(In,v, model.ninstances)
+
+end
+
 function get_primal_variables(model)
 
   if model.param[1].kernel_type != 0
@@ -282,16 +291,18 @@ function get_primal_variables(model)
   end
   mdl = unsafe_load(model.ptr)
 
-  (In,v) = get_dual_variables(model)
+  (In,v) = get_dual_variables_raw(model)
   instances = nodes2instance(model)
 
   n = size(instances,1)
   x = zeros(n)
 
+  # Indicies may be out of order
   for i = 1:size(instances,2)
     x = x + v[i]*instances[:,i]
   end
-  [x; unsafe_load(mdl.rho)]
+
+  (x, unsafe_load(mdl.rho))
 
 end
 
