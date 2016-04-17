@@ -88,7 +88,7 @@ let libsvm = C_NULL
   function get_libsvm()
     if libsvm == C_NULL
       path = ""
-      if OS_NAME == :Darwin
+      if OS_NAME == :Darwin || OS_NAME == :Linux
         path=joinpath(Pkg.dir(), "LIBSVM", "deps", "libsvm.so.2")
       end
       if OS_NAME == :Windows
